@@ -1,0 +1,2331 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>כנף במחברת — אוספים מטבעות</title>
+    <!-- גופנים נקיים וידידותיים בעברית לסגנון מחברת מצוירת -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800&family=Rubik:wght@500;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --paper-bg: #faf8f3;
+            --ink-color: #1e2024;
+            --ink-muted: #575c66;
+            --accent-gold: #e5a91a;
+            --accent-gold-bg: #fff3c4;
+            --accent-green: #2e8b57;
+            --accent-green-bg: #e3f7eb;
+            --accent-blue: #2563eb;
+            --accent-blue-bg: #e8f0fe;
+            --shadow-sketch: 3px 3px 0px rgba(30, 32, 36, 0.85);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #e6e2d8;
+            font-family: 'Rubik', 'Heebo', 'Segoe UI', Arial, sans-serif;
+            color: var(--ink-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* מסגרת דף מחברת */
+        #game-shell {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 1140px;
+            max-height: 780px;
+            background-color: var(--paper-bg);
+            box-shadow: 0 18px 45px rgba(0, 0, 0, 0.16);
+            overflow: hidden;
+        }
+
+        @media (min-width: 1160px) {
+            #game-shell {
+                width: 95vw;
+                height: 90vh;
+                border-radius: 16px;
+                border: 2.5px solid var(--ink-color);
+            }
+        }
+
+        /* מרקם נייר עדין */
+        #paper-texture {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.35;
+            background-image: radial-gradient(rgba(30, 32, 36, 0.08) 1px, transparent 0);
+            background-size: 18px 18px;
+            z-index: 1;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* כרטיסים וכפתורים בסגנון ציור ידני */
+        .sketch-box {
+            background: rgba(250, 248, 243, 0.96);
+            border: 2.5px solid var(--ink-color);
+            border-radius: 14px 18px 13px 16px / 16px 13px 18px 14px;
+            box-shadow: var(--shadow-sketch);
+        }
+
+        .sketch-btn {
+            font-family: 'Rubik', 'Heebo', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--ink-color);
+            background: #fffdf9;
+            border: 2.5px solid var(--ink-color);
+            border-radius: 12px 15px 11px 14px / 14px 11px 15px 12px;
+            padding: 9px 18px;
+            cursor: pointer;
+            box-shadow: var(--shadow-sketch);
+            transition: transform 0.08s ease, box-shadow 0.08s ease, background-color 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+        }
+
+        .sketch-btn:hover:not(:disabled) {
+            background: var(--accent-gold-bg);
+            transform: translate(-1px, -1px);
+            box-shadow: 4px 4px 0px rgba(30, 32, 36, 0.9);
+        }
+
+        .sketch-btn:active:not(:disabled) {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0px rgba(30, 32, 36, 0.9);
+        }
+
+        .sketch-btn:disabled {
+            opacity: 0.52;
+            cursor: not-allowed;
+        }
+
+        .sketch-btn.primary {
+            background: var(--accent-gold-bg);
+            font-size: 1.2rem;
+            padding: 11px 26px;
+        }
+
+        .sketch-btn.success {
+            background: var(--accent-green-bg);
+            border-color: var(--accent-green);
+            color: #164e30;
+        }
+
+        .sketch-btn.icon-btn {
+            padding: 7px 12px;
+            font-size: 0.92rem;
+            min-height: 42px;
+        }
+
+        /* סרגל עליון (HUD) */
+        #hud {
+            position: absolute;
+            top: 12px;
+            left: 14px;
+            right: 14px;
+            z-index: 10;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        .hud-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            pointer-events: auto;
+        }
+
+        .stat-pill {
+            padding: 5px 12px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 1rem;
+            line-height: 1.15;
+        }
+
+        .stat-label {
+            font-size: 0.78rem;
+            color: var(--ink-muted);
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-weight: 800;
+            font-size: 1.18rem;
+        }
+
+        /* מד זמן לשלב */
+        .timer-pill {
+            min-width: 142px;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 4px;
+        }
+
+        .timer-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .timer-track {
+            width: 100%;
+            height: 9px;
+            background: rgba(30, 32, 36, 0.12);
+            border: 1.5px solid var(--ink-color);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        #timer-fill {
+            height: 100%;
+            width: 100%;
+            background: var(--accent-gold);
+            transition: width 0.1s linear, background-color 0.25s ease;
+        }
+
+        /* כפתורי שליטה על המסך (למגע ולעכבר) */
+        #flight-controls {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            right: 16px;
+            z-index: 12;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+
+        .control-pad {
+            display: flex;
+            gap: 10px;
+            pointer-events: auto;
+        }
+
+        .control-pad.vertical {
+            flex-direction: column;
+        }
+
+        .ctrl-btn {
+            min-width: 68px;
+            height: 54px;
+            padding: 0 12px;
+            font-size: 0.98rem;
+            background: rgba(255, 253, 249, 0.9);
+            touch-action: none;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .ctrl-btn.active-press {
+            background: var(--accent-gold-bg);
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0px rgba(30, 32, 36, 0.9);
+        }
+
+        /* חלונות קופצים (התחלה, השהיה, סיום שלב, חנות) */
+        .overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 25;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            background: rgba(250, 248, 243, 0.68);
+            backdrop-filter: blur(3px);
+            transition: opacity 0.2s ease;
+        }
+
+        .overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .modal-card {
+            width: 100%;
+            max-width: 470px;
+            padding: 24px 22px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            max-height: 92vh;
+            overflow-y: auto;
+        }
+
+        .modal-card.wide {
+            max-width: 780px;
+            padding: 20px;
+        }
+
+        .modal-title {
+            font-size: 2rem;
+            font-weight: 800;
+            line-height: 1.15;
+        }
+
+        .modal-subtitle {
+            font-size: 1.06rem;
+            color: var(--ink-muted);
+            line-height: 1.45;
+        }
+
+        /* כוכבים בסיום שלב */
+        .stars-row {
+            font-size: 2.3rem;
+            letter-spacing: 6px;
+            color: var(--accent-gold);
+            text-shadow: 2px 2px 0 #1e2024;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            width: 100%;
+        }
+
+        .summary-item {
+            padding: 10px 6px;
+            border: 2px solid var(--ink-color);
+            border-radius: 10px;
+            background: #fffdf9;
+        }
+
+        .summary-item .num {
+            font-size: 1.45rem;
+            font-weight: 800;
+            display: block;
+        }
+
+        .summary-item .lbl {
+            font-size: 0.85rem;
+            color: var(--ink-muted);
+            font-weight: 600;
+        }
+
+        /* חנות ועיצוב הציפור (3 לשוניות) */
+        .store-header {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            border-bottom: 2px dashed rgba(30, 32, 36, 0.25);
+            padding-bottom: 10px;
+        }
+
+        .store-layout {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            gap: 16px;
+            align-items: start;
+        }
+
+        @media (max-width: 680px) {
+            .store-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .preview-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 12px;
+            background: #fffdf9;
+            border: 2px solid var(--ink-color);
+            border-radius: 12px;
+        }
+
+        #preview-canvas {
+            width: 180px;
+            height: 140px;
+            border: 1.5px dashed rgba(30, 32, 36, 0.3);
+            border-radius: 10px;
+            background: var(--paper-bg);
+        }
+
+        .store-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            flex: 1;
+            min-width: 90px;
+            padding: 8px 12px;
+            font-size: 0.98rem;
+            background: #fffdf9;
+        }
+
+        .tab-btn.active {
+            background: var(--accent-gold-bg);
+            transform: translateY(-2px);
+        }
+
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+            gap: 10px;
+            max-height: 310px;
+            overflow-y: auto;
+            padding: 4px;
+        }
+
+        .store-item-card {
+            border: 2px solid var(--ink-color);
+            border-radius: 12px;
+            background: #fffdf9;
+            padding: 10px 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            text-align: center;
+            transition: transform 0.1s ease;
+        }
+
+        .store-item-card.equipped {
+            background: var(--accent-green-bg);
+            border-color: var(--accent-green);
+        }
+
+        .item-swatch {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 2.2px solid var(--ink-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .item-name {
+            font-weight: 700;
+            font-size: 0.98rem;
+        }
+
+        .item-desc {
+            font-size: 0.78rem;
+            color: var(--ink-muted);
+            line-height: 1.25;
+        }
+
+        .item-action-btn {
+            width: 100%;
+            padding: 6px 8px;
+            font-size: 0.88rem;
+            margin-top: 2px;
+        }
+
+        /* התראת הודעה קצרה */
+        #toast-banner {
+            position: absolute;
+            top: 82px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-14px);
+            z-index: 30;
+            padding: 8px 20px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: var(--accent-gold-bg);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+
+        #toast-banner.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        @media (max-width: 640px) {
+            .stat-pill {
+                padding: 4px 9px;
+                font-size: 0.9rem;
+            }
+            .stat-value {
+                font-size: 1.05rem;
+            }
+            .modal-title {
+                font-size: 1.65rem;
+            }
+            .ctrl-btn {
+                min-width: 58px;
+                height: 48px;
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-shell">
+    <div id="paper-texture"></div>
+
+    <!-- סרגל עליון (HUD) -->
+    <div id="hud">
+        <div class="hud-group">
+            <!-- מטבעות בבנק -->
+            <div class="sketch-box stat-pill" title="סך המטבעות השמורים בבנק">
+                <svg width="22" height="22" viewBox="0 0 28 28" fill="none" stroke="#1e2024" stroke-width="2.3">
+                    <circle cx="14" cy="14" r="11" fill="#fff3c4"/>
+                    <path d="M12 10.5 L14.5 8.5 L14.5 19.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <div>
+                    <div class="stat-label">בנק מטבעות</div>
+                    <div class="stat-value" id="hud-bank">0</div>
+                </div>
+            </div>
+
+            <!-- שלב נוכחי -->
+            <div class="sketch-box stat-pill">
+                <div>
+                    <div class="stat-label">שלב</div>
+                    <div class="stat-value" id="hud-level">1</div>
+                </div>
+            </div>
+
+            <!-- התקדמות מטבעות בשלב (מתוך 100) -->
+            <div class="sketch-box stat-pill">
+                <div>
+                    <div class="stat-label">מטבעות בשלב</div>
+                    <div class="stat-value" id="hud-level-coins">0 / 100</div>
+                </div>
+            </div>
+
+            <!-- מד זמן -->
+            <div class="sketch-box stat-pill timer-pill">
+                <div class="timer-top">
+                    <span>זמן נותר</span>
+                    <span id="hud-time">23.0 שנ׳</span>
+                </div>
+                <div class="timer-track">
+                    <div id="timer-fill"></div>
+                </div>
+            </div>
+
+            <!-- מהירות טיסה -->
+            <div class="sketch-box stat-pill">
+                <div>
+                    <div class="stat-label">מהירות</div>
+                    <div class="stat-value" id="hud-speed">1.0x</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- כפתורי פעולה מהירים -->
+        <div class="hud-group">
+            <button class="sketch-btn primary icon-btn" id="btn-open-store-hud" title="פתיחת חנות הציפורים והעיצוב">
+                🎨 חנות
+            </button>
+            <button class="sketch-btn icon-btn" id="btn-paper" title="החלפת סוג דף (שורות / משבצות / חלק)">
+                📄 דף
+            </button>
+            <button class="sketch-btn icon-btn" id="btn-mute" title="השתקת צלילים / הפעלה">
+                <span id="mute-label">🔊 צליל</span>
+            </button>
+            <button class="sketch-btn icon-btn" id="btn-pause" title="השהיית משחק">
+                ⏸️
+            </button>
+        </div>
+    </div>
+
+    <!-- הודעה קופצת -->
+    <div id="toast-banner" class="sketch-box">הפריט נרכש בהצלחה!</div>
+
+    <!-- קנבס המשחק הראשי -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- כפתורי שליטה על המסך (למגע ולעכבר) -->
+    <div id="flight-controls">
+        <!-- שליטה במהירות (ימינה / שמאלה) -->
+        <div class="control-pad horizontal">
+            <button class="sketch-btn ctrl-btn" id="ctrl-right" title="הגברת מהירות (חץ ימינה)">
+                <span>➡️</span>
+                <span>מהר</span>
+            </button>
+            <button class="sketch-btn ctrl-btn" id="ctrl-left" title="האטת מהירות (חץ שמאלה)">
+                <span>⬅️</span>
+                <span>לאט</span>
+            </button>
+        </div>
+
+        <!-- שליטה בגובה (למעלה / למטה) -->
+        <div class="control-pad vertical">
+            <button class="sketch-btn ctrl-btn" id="ctrl-up" title="טיסה למעלה (חץ למעלה)">
+                <span>⬆️</span>
+                <span>למעלה</span>
+            </button>
+            <button class="sketch-btn ctrl-btn" id="ctrl-down" title="טיסה למטה (חץ למטה)">
+                <span>⬇️</span>
+                <span>למטה</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- מסך פתיחה -->
+    <div id="start-overlay" class="overlay">
+        <div class="sketch-box modal-card">
+            <div class="modal-title">✏️ כנף במחברת</div>
+            <p class="modal-subtitle">
+                הטיסו את הציפור המצוירת בשמי המחברת ואספו כמה שיותר מתוך <strong>100 המטבעות</strong> בכל שלב!<br>
+                הציפור שומרת על הגובה שלה באוויר:<br>
+                <strong>למעלה / למטה</strong> לשינוי גובה &bull; <strong>ימינה / שמאלה</strong> לשינוי מהירות.
+            </p>
+
+            <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
+                <button class="sketch-btn primary" id="btn-start">
+                    🚀 התחל שלב 1
+                </button>
+                <button class="sketch-btn" id="btn-start-store">
+                    🎨 חנות ועיצוב
+                </button>
+            </div>
+            <div style="font-size: 0.9rem; color: var(--ink-muted);">
+                אפשר לשחק עם חצי המקלדת או עם הכפתורים שעל המסך!
+            </div>
+        </div>
+    </div>
+
+    <!-- מסך השהיה -->
+    <div id="pause-overlay" class="overlay hidden">
+        <div class="sketch-box modal-card">
+            <div class="modal-title">⏸️ המשחק מושהה</div>
+            <p class="modal-subtitle">קחו הפסקה קצרה. הדף מחכה לכם בדיוק איפה שעצרתם.</p>
+            <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
+                <button class="sketch-btn primary" id="btn-resume">▶️ המשך טיסה</button>
+                <button class="sketch-btn" id="btn-restart-pause">🔄 התחל שלב מחדש</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- מסך סיום שלב -->
+    <div id="level-complete-overlay" class="overlay hidden">
+        <div class="sketch-box modal-card">
+            <div class="modal-title" id="lc-title">🎉 שלב 1 הושלם!</div>
+            <div class="stars-row" id="lc-stars">★★★</div>
+            <p class="modal-subtitle" id="lc-subtitle">כל הכבוד! המטבעות שאספתם הופקדו בבנק.</p>
+
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <span class="num" id="lc-caught">0 / 100</span>
+                    <span class="lbl">מטבעות שנתפסו</span>
+                </div>
+                <div class="summary-item">
+                    <span class="num" id="lc-earned">+0</span>
+                    <span class="lbl">נוספו לבנק</span>
+                </div>
+                <div class="summary-item">
+                    <span class="num" id="lc-bank">0</span>
+                    <span class="lbl">סה״כ בבנק</span>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:4px;">
+                <button class="sketch-btn primary" id="btn-next-level">
+                    ➡️ לשלב הבא
+                </button>
+                <button class="sketch-btn" id="btn-lc-store">
+                    🎨 לחנות הציפורים
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- חנות ועיצוב הציפור (3 לשוניות: ציפורים, צבעים, אביזרים) -->
+    <div id="store-overlay" class="overlay hidden">
+        <div class="sketch-box modal-card wide">
+            <div class="store-header">
+                <div style="text-align:right;">
+                    <div class="modal-title" style="font-size:1.65rem;">🎨 חנות ועיצוב הציפור</div>
+                    <div style="font-size:0.95rem; color:var(--ink-muted);">בחרו ציפור חדשה, צבע טוש מגניב ואביזרים מיוחדים!</div>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="sketch-box stat-pill" style="background:var(--accent-gold-bg);">
+                        <span>🪙 בבנק:</span>
+                        <strong id="store-bank-val" style="font-size:1.2rem;">0</strong>
+                    </div>
+                    <button class="sketch-btn" id="btn-close-store">✖️ סגור וחזור</button>
+                </div>
+            </div>
+
+            <div class="store-layout">
+                <!-- תצוגה מקדימה חיה של הציפור -->
+                <div class="preview-panel">
+                    <div style="font-weight:700; font-size:1rem;">תצוגה מקדימה</div>
+                    <canvas id="preview-canvas" width="180" height="140"></canvas>
+                    <div id="preview-summary" style="font-size:0.86rem; color:var(--ink-muted); line-height:1.35;">
+                        ציפור מחברת &bull; עפרון אפור
+                    </div>
+                </div>
+
+                <!-- לשוניות ופריטים -->
+                <div style="width:100%;">
+                    <div class="store-tabs">
+                        <button class="sketch-btn tab-btn active" data-tab="birds">🐦 ציפורים</button>
+                        <button class="sketch-btn tab-btn" data-tab="colors">🖌️ צבעים</button>
+                        <button class="sketch-btn tab-btn" data-tab="accessories">👑 אביזרים</button>
+                    </div>
+                    <div class="items-grid" id="store-items-grid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(() => {
+    'use strict';
+
+    // =========================================================================
+    // 1. מערכת צלילים מסונתזת (Web Audio API - ללא קבצים חיצוניים)
+    // =========================================================================
+    class SketchAudio {
+        constructor() {
+            this.ctx = null;
+            this.muted = false;
+        }
+
+        init() {
+            if (!this.ctx) {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (AudioCtx) this.ctx = new AudioCtx();
+            }
+            if (this.ctx && this.ctx.state === 'suspended') {
+                this.ctx.resume();
+            }
+        }
+
+        toggleMute() {
+            this.muted = !this.muted;
+            return this.muted;
+        }
+
+        playFlap() {
+            if (this.muted) return;
+            this.init();
+            if (!this.ctx) return;
+            const now = this.ctx.currentTime;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(200, now);
+            osc.frequency.exponentialRampToValueAtTime(350, now + 0.08);
+            gain.gain.setValueAtTime(0.001, now);
+            gain.gain.linearRampToValueAtTime(0.09, now + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.11);
+        }
+
+        playCoin(isBonus = false) {
+            if (this.muted) return;
+            this.init();
+            if (!this.ctx) return;
+            const now = this.ctx.currentTime;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const baseFreq = isBonus ? 784 : 620;
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(baseFreq, now);
+            osc.frequency.setValueAtTime(baseFreq * 1.25, now + 0.05);
+            gain.gain.setValueAtTime(0.001, now);
+            gain.gain.linearRampToValueAtTime(0.13, now + 0.015);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.21);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.22);
+        }
+
+        playLevelComplete() {
+            if (this.muted) return;
+            this.init();
+            if (!this.ctx) return;
+            const notes = [523.25, 659.25, 783.99, 1046.50];
+            notes.forEach((freq, idx) => {
+                const now = this.ctx.currentTime + idx * 0.08;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, now);
+                gain.gain.setValueAtTime(0.001, now);
+                gain.gain.linearRampToValueAtTime(0.13, now + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.29);
+            });
+        }
+
+        playPurchase() {
+            if (this.muted) return;
+            this.init();
+            if (!this.ctx) return;
+            const notes = [659.25, 880];
+            notes.forEach((freq, idx) => {
+                const now = this.ctx.currentTime + idx * 0.06;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now);
+                gain.gain.setValueAtTime(0.001, now);
+                gain.gain.linearRampToValueAtTime(0.12, now + 0.015);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.19);
+            });
+        }
+    }
+
+    // =========================================================================
+    // 2. נתוני החנות והעיצוב (ציפורים, צבעי טוש, ואביזרים)
+    // =========================================================================
+    const BIRDS_CATALOG = [
+        {
+            id: 'sketch',
+            name: 'ציפור מחברת',
+            desc: 'הציפור המקורית מהציור שלך!',
+            price: 0,
+            headAnchor: { x: 14, y: -7 },
+            neckAnchor: { x: 7, y: 2 },
+            backAnchor: { x: -4, y: -1 }
+        },
+        {
+            id: 'flamingo',
+            name: 'פלמינגו',
+            desc: 'צוואר ארוך ומקור מעוקל ואלגנטי',
+            price: 80,
+            headAnchor: { x: 22, y: -14 },
+            neckAnchor: { x: 15, y: -4 },
+            backAnchor: { x: -4, y: 2 }
+        },
+        {
+            id: 'goose',
+            name: 'אווז',
+            desc: 'אווז מחברת שובב עם מקור שטוח',
+            price: 120,
+            headAnchor: { x: 20, y: -11 },
+            neckAnchor: { x: 13, y: -2 },
+            backAnchor: { x: -4, y: 2 }
+        },
+        {
+            id: 'parrot',
+            name: 'תוכי',
+            desc: 'כרבולת נוצות וזנב ארוך ומסולסל',
+            price: 170,
+            headAnchor: { x: 13, y: -9 },
+            neckAnchor: { x: 6, y: 2 },
+            backAnchor: { x: -5, y: 0 }
+        },
+        {
+            id: 'owl',
+            name: 'ינשוף',
+            desc: 'עיניים גדולות ואוזניים מחודדות',
+            price: 220,
+            headAnchor: { x: 12, y: -11 },
+            neckAnchor: { x: 6, y: 4 },
+            backAnchor: { x: -5, y: 1 }
+        },
+        {
+            id: 'crane',
+            name: 'עגור אוריגמי',
+            desc: 'קיפול נייר גיאומטרי חד ומהיר',
+            price: 280,
+            headAnchor: { x: 19, y: -11 },
+            neckAnchor: { x: 11, y: -2 },
+            backAnchor: { x: -3, y: 1 }
+        }
+    ];
+
+    const COLORS_CATALOG = [
+        { id: 'graphite', name: 'עפרון אפור', stroke: '#2c2f36', fill: '#faf8f3', accent: '#d8d5ce', price: 0 },
+        { id: 'penBlue', name: 'כחול עט', stroke: '#1d4ed8', fill: '#eff6ff', accent: '#93c5fd', price: 50 },
+        { id: 'markerRed', name: 'אדום טוש', stroke: '#dc2626', fill: '#fef2f2', accent: '#fca5a5', price: 50 },
+        { id: 'highlighterGreen', name: 'ירוק מרקר', stroke: '#15803d', fill: '#f0fdf4', accent: '#86efac', price: 50 },
+        { id: 'royalPurple', name: 'סגול מלכותי', stroke: '#7e22ce', fill: '#faf5ff', accent: '#d8b4fe', price: 75 },
+        { id: 'shinyGold', name: 'זהב נוצץ', stroke: '#b45309', fill: '#fffbeb', accent: '#fcd34d', price: 100 }
+    ];
+
+    const ACCESSORIES_CATALOG = [
+        { id: 'none', name: 'ללא אביזר', desc: 'מראה נקי וטבעי', icon: '✨', price: 0 },
+        { id: 'crown', name: 'כתר מלכות', desc: 'כתר זהב למלך השמיים', icon: '👑', price: 90 },
+        { id: 'wizard', name: 'כובע קוסמים', desc: 'כובע מחודד עם כוכבים', icon: '🧙', price: 110 },
+        { id: 'cap', name: 'כובע מצחייה', desc: 'כובע ספורטיבי מגניב', icon: '🧢', price: 70 },
+        { id: 'cape', name: 'גלימת גיבור-על', desc: 'מתנופפת ברוח מאחור', icon: '🦸', price: 130 },
+        { id: 'sunglasses', name: 'משקפי שמש', desc: 'סטייל קול במיוחד', icon: '🕶️', price: 85 },
+        { id: 'bowtie', name: 'עניבת פרפר', desc: 'אלגנטי וחגיגי', icon: '🎀', price: 65 }
+    ];
+
+    // =========================================================================
+    // 3. שמירת התקדמות בדפדפן (localStorage)
+    // =========================================================================
+    const SAVE_KEY = 'sketchbook_wing_he_save_v1';
+
+    function loadSaveData() {
+        try {
+            const raw = localStorage.getItem(SAVE_KEY);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                return {
+                    bank: Number(parsed.bank) || 0,
+                    level: Math.max(1, Number(parsed.level) || 1),
+                    unlockedBirds: Array.isArray(parsed.unlockedBirds) ? parsed.unlockedBirds : ['sketch'],
+                    unlockedColors: Array.isArray(parsed.unlockedColors) ? parsed.unlockedColors : ['graphite'],
+                    unlockedAccessories: Array.isArray(parsed.unlockedAccessories) ? parsed.unlockedAccessories : ['none'],
+                    equippedBird: parsed.equippedBird || 'sketch',
+                    equippedColor: parsed.equippedColor || 'graphite',
+                    equippedAccessory: parsed.equippedAccessory || 'none'
+                };
+            }
+        } catch (e) {
+            console.warn('Save load fallback:', e);
+        }
+        return {
+            bank: 0,
+            level: 1,
+            unlockedBirds: ['sketch'],
+            unlockedColors: ['graphite'],
+            unlockedAccessories: ['none'],
+            equippedBird: 'sketch',
+            equippedColor: 'graphite',
+            equippedAccessory: 'none'
+        };
+    }
+
+    let saveData = loadSaveData();
+
+    function persistSave() {
+        try {
+            localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
+        } catch (e) {
+            console.warn('Save persist failed:', e);
+        }
+    }
+
+    // =========================================================================
+    // 4. הגדרות קנבס ומשתני משחק
+    // =========================================================================
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    const previewCanvas = document.getElementById('preview-canvas');
+    const previewCtx = previewCanvas.getContext('2d');
+    const audio = new SketchAudio();
+
+    const PAPER_MODES = ['ruled', 'grid', 'clean'];
+    let paperModeIndex = 0;
+
+    let width = 800;
+    let height = 600;
+    let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    let gameState = 'START'; // 'START' | 'PLAYING' | 'PAUSED' | 'LEVEL_COMPLETE' | 'STORE'
+    let previousStateBeforeStore = 'START';
+
+    // הגדרות שלב (100 מטבעות בכל שלב, ~23 שניות)
+    const COINS_PER_LEVEL = 100;
+    const LEVEL_DURATION = 23.0;
+
+    let levelTimeLeft = LEVEL_DURATION;
+    let levelCoinsCaught = 0;
+    let levelCoinsEarned = 0;
+    let coinsSpawnedInLevel = 0;
+
+    let scrollOffset = 0;
+    let baseSpeed = 250;
+    let speedOffset = 0;
+    let currentSpeed = baseSpeed;
+    let lastTimestamp = 0;
+    let toastTimer = null;
+
+    const inputState = { up: false, down: false, left: false, right: false };
+
+    const bird = {
+        baseX: 185,
+        x: 185,
+        y: 260,
+        vy: 0,
+        radius: 22,
+        verticalSpeed: 315,
+        wingPhase: 0,
+        tilt: 0
+    };
+
+    let coins = [];
+    let particles = [];
+    let floatingTexts = [];
+    let clouds = [];
+    let windLines = [];
+    let nextPatternX = 480;
+    let patternCounter = 0;
+
+    // אלמנטים בממשק
+    const hudBank = document.getElementById('hud-bank');
+    const hudLevel = document.getElementById('hud-level');
+    const hudLevelCoins = document.getElementById('hud-level-coins');
+    const hudTime = document.getElementById('hud-time');
+    const timerFill = document.getElementById('timer-fill');
+    const hudSpeed = document.getElementById('hud-speed');
+    const toastBanner = document.getElementById('toast-banner');
+
+    const startOverlay = document.getElementById('start-overlay');
+    const pauseOverlay = document.getElementById('pause-overlay');
+    const levelCompleteOverlay = document.getElementById('level-complete-overlay');
+    const storeOverlay = document.getElementById('store-overlay');
+
+    function resizeCanvas() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        width = rect.width;
+        height = rect.height;
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+        canvas.width = Math.floor(width * dpr);
+        canvas.height = Math.floor(height * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        bird.baseX = Math.max(95, Math.min(220, width * 0.24));
+        bird.x = bird.baseX;
+        if (gameState === 'START') {
+            bird.y = height * 0.45;
+        } else {
+            bird.y = Math.max(getCeilingY() + bird.radius, Math.min(bird.y, getGroundY() - bird.radius));
+        }
+    }
+
+    function getCeilingY() { return 76; }
+    function getGroundY() { return height - 82; }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function showToast(msg) {
+        toastBanner.textContent = msg;
+        toastBanner.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toastBanner.classList.remove('show'), 2100);
+    }
+
+    function updateHUD() {
+        hudBank.textContent = saveData.bank;
+        hudLevel.textContent = saveData.level;
+        hudLevelCoins.textContent = `${levelCoinsCaught} / ${COINS_PER_LEVEL}`;
+        hudTime.textContent = `${Math.max(0, levelTimeLeft).toFixed(1)} שנ׳`;
+        const pct = Math.max(0, Math.min(100, (levelTimeLeft / LEVEL_DURATION) * 100));
+        timerFill.style.width = `${pct}%`;
+        timerFill.style.backgroundColor = pct < 25 ? '#ef4444' : 'var(--accent-gold)';
+        hudSpeed.textContent = `${(currentSpeed / baseSpeed).toFixed(1)}x`;
+        document.getElementById('btn-start').textContent = `🚀 התחל שלב ${saveData.level}`;
+    }
+
+    // =========================================================================
+    // 5. יצירת תבניות מטבעות בשלב (עד 100 מטבעות לשלב)
+    // =========================================================================
+    function spawnCoinPattern() {
+        if (coinsSpawnedInLevel >= COINS_PER_LEVEL) return;
+
+        const ceil = getCeilingY() + 34;
+        const floor = getGroundY() - 34;
+        const usableH = Math.max(120, floor - ceil);
+        const midY = ceil + usableH * 0.5;
+
+        const patterns = ['scattered', 'wave', 'arc', 'climb', 'doubleRibbon', 'zigzag'];
+        const type = patterns[patternCounter % patterns.length];
+        patternCounter++;
+
+        const remaining = COINS_PER_LEVEL - coinsSpawnedInLevel;
+        const desiredCount = Math.min(remaining, type === 'doubleRibbon' ? 10 : 7);
+        const spacingX = Math.max(46, 62 - saveData.level * 1.5);
+        const coinRadius = 16;
+
+        // בשלבים מתקדמים מופיעים גם מטבעות זהב מיוחדים של 5 נקודות
+        const makeCoinObj = (cx, cy, idx) => {
+            coinsSpawnedInLevel++;
+            const isBonus5 = saveData.level >= 2 && (coinsSpawnedInLevel % 15 === 0);
+            return {
+                x: cx,
+                y: cy,
+                baseY: cy,
+                radius: isBonus5 ? 19 : coinRadius,
+                value: isBonus5 ? 5 : 1,
+                isBonus5,
+                bobPhase: idx * 0.45,
+                collected: false
+            };
+        };
+
+        if (type === 'scattered') {
+            const offsets = [0.22, 0.68, 0.35, 0.80, 0.48, 0.25, 0.62];
+            for (let i = 0; i < desiredCount; i++) {
+                const norm = offsets[(i + patternCounter) % offsets.length];
+                coins.push(makeCoinObj(nextPatternX + i * (spacingX * 1.05), ceil + norm * usableH, i));
+            }
+            nextPatternX += desiredCount * (spacingX * 1.05) + 75;
+
+        } else if (type === 'wave') {
+            const amp = usableH * 0.32;
+            const phase = Math.random() * Math.PI * 2;
+            for (let i = 0; i < desiredCount; i++) {
+                const cy = midY + Math.sin(i * 0.72 + phase) * amp;
+                coins.push(makeCoinObj(nextPatternX + i * spacingX, cy, i));
+            }
+            nextPatternX += desiredCount * spacingX + 70;
+
+        } else if (type === 'arc') {
+            const goHigh = Math.random() > 0.45;
+            const arcH = usableH * 0.38;
+            for (let i = 0; i < desiredCount; i++) {
+                const t = desiredCount > 1 ? (i / (desiredCount - 1)) * 2 - 1 : 0;
+                const para = 1 - t * t;
+                const cy = goHigh ? (midY + arcH * 0.45) - para * arcH : (midY - arcH * 0.45) + para * arcH;
+                coins.push(makeCoinObj(nextPatternX + i * spacingX, cy, i));
+            }
+            nextPatternX += desiredCount * spacingX + 75;
+
+        } else if (type === 'climb') {
+            const asc = Math.random() > 0.5;
+            for (let i = 0; i < desiredCount; i++) {
+                const t = desiredCount > 1 ? i / (desiredCount - 1) : 0.5;
+                const norm = asc ? (0.82 - t * 0.64) : (0.18 + t * 0.64);
+                coins.push(makeCoinObj(nextPatternX + i * spacingX, ceil + norm * usableH, i));
+            }
+            nextPatternX += desiredCount * spacingX + 75;
+
+        } else if (type === 'doubleRibbon') {
+            const cols = Math.ceil(desiredCount / 2);
+            let added = 0;
+            for (let c = 0; c < cols && added < desiredCount; c++) {
+                coins.push(makeCoinObj(nextPatternX + c * spacingX, midY - usableH * 0.2, c));
+                added++;
+                if (added < desiredCount) {
+                    coins.push(makeCoinObj(nextPatternX + c * spacingX, midY + usableH * 0.2, c + 1));
+                    added++;
+                }
+            }
+            nextPatternX += cols * spacingX + 80;
+
+        } else {
+            for (let i = 0; i < desiredCount; i++) {
+                const high = i % 2 === 0;
+                const cy = midY + (high ? -usableH * 0.25 : usableH * 0.25);
+                coins.push(makeCoinObj(nextPatternX + i * spacingX, cy, i));
+            }
+            nextPatternX += desiredCount * spacingX + 75;
+        }
+    }
+
+    function initBackgroundDoodles() {
+        clouds = [];
+        for (let i = 0; i < 6; i++) {
+            clouds.push({
+                x: Math.random() * width,
+                y: getCeilingY() + 26 + Math.random() * (height * 0.48),
+                scale: 0.65 + Math.random() * 0.55,
+                speedFactor: 0.18 + Math.random() * 0.14
+            });
+        }
+        windLines = [];
+        for (let i = 0; i < 8; i++) {
+            windLines.push({
+                x: Math.random() * width,
+                y: getCeilingY() + 20 + Math.random() * (getGroundY() - getCeilingY() - 40),
+                len: 28 + Math.random() * 44
+            });
+        }
+    }
+
+    // =========================================================================
+    // 6. ניהול שלבים וזרימת המשחק
+    // =========================================================================
+    function startLevel() {
+        audio.init();
+        levelTimeLeft = LEVEL_DURATION;
+        levelCoinsCaught = 0;
+        levelCoinsEarned = 0;
+        coinsSpawnedInLevel = 0;
+
+        baseSpeed = 245 + Math.min(135, (saveData.level - 1) * 14);
+        speedOffset = 0;
+        currentSpeed = baseSpeed;
+
+        bird.x = bird.baseX;
+        bird.y = height * 0.45;
+        bird.vy = 0;
+        bird.tilt = 0;
+
+        coins = [];
+        particles = [];
+        floatingTexts = [];
+        nextPatternX = Math.max(width * 0.55, 380);
+        patternCounter = saveData.level;
+
+        initBackgroundDoodles();
+        while (coinsSpawnedInLevel < COINS_PER_LEVEL && nextPatternX < width * 2.2) {
+            spawnCoinPattern();
+        }
+
+        gameState = 'PLAYING';
+        startOverlay.classList.add('hidden');
+        pauseOverlay.classList.add('hidden');
+        levelCompleteOverlay.classList.add('hidden');
+        storeOverlay.classList.add('hidden');
+
+        updateHUD();
+        audio.playFlap();
+    }
+
+    function finishLevel() {
+        gameState = 'LEVEL_COMPLETE';
+        audio.playLevelComplete();
+
+        const finishedLevelNum = saveData.level;
+        saveData.bank += levelCoinsEarned;
+        saveData.level += 1;
+        persistSave();
+        updateHUD();
+
+        // חישוב כוכבים לפי כמות המטבעות שנתפסו
+        let stars = '★☆☆';
+        if (levelCoinsCaught >= 80) stars = '★★★';
+        else if (levelCoinsCaught >= 45) stars = '★★☆';
+
+        document.getElementById('lc-title').textContent = `🎉 שלב ${finishedLevelNum} הושלם!`;
+        document.getElementById('lc-stars').textContent = stars;
+        document.getElementById('lc-caught').textContent = `${levelCoinsCaught} / ${COINS_PER_LEVEL}`;
+        document.getElementById('lc-earned').textContent = `+${levelCoinsEarned}`;
+        document.getElementById('lc-bank').textContent = saveData.bank;
+        document.getElementById('btn-next-level').textContent = `➡️ התחל שלב ${saveData.level}`;
+
+        levelCompleteOverlay.classList.remove('hidden');
+    }
+
+    function togglePause() {
+        if (gameState === 'PLAYING') {
+            gameState = 'PAUSED';
+            pauseOverlay.classList.remove('hidden');
+        } else if (gameState === 'PAUSED') {
+            gameState = 'PLAYING';
+            lastTimestamp = performance.now();
+            pauseOverlay.classList.add('hidden');
+        }
+    }
+
+    // =========================================================================
+    // 7. חנות ועיצוב הציפור (3 לשוניות + תצוגה מקדימה חיה)
+    // =========================================================================
+    let activeStoreTab = 'birds';
+
+    function openStore() {
+        if (gameState !== 'STORE') {
+            previousStateBeforeStore = gameState;
+        }
+        gameState = 'STORE';
+        startOverlay.classList.add('hidden');
+        pauseOverlay.classList.add('hidden');
+        levelCompleteOverlay.classList.add('hidden');
+        storeOverlay.classList.remove('hidden');
+        renderStore();
+    }
+
+    function closeStore() {
+        storeOverlay.classList.add('hidden');
+        if (previousStateBeforeStore === 'PLAYING') {
+            gameState = 'PLAYING';
+            lastTimestamp = performance.now();
+        } else if (previousStateBeforeStore === 'LEVEL_COMPLETE') {
+            gameState = 'LEVEL_COMPLETE';
+            levelCompleteOverlay.classList.remove('hidden');
+        } else {
+            gameState = 'START';
+            startOverlay.classList.remove('hidden');
+        }
+    }
+
+    function renderStore() {
+        document.getElementById('store-bank-val').textContent = saveData.bank;
+
+        // עדכון כפתורי הלשוניות
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tab === activeStoreTab);
+        });
+
+        // עדכון תיאור תצוגה מקדימה
+        const bObj = BIRDS_CATALOG.find(b => b.id === saveData.equippedBird) || BIRDS_CATALOG[0];
+        const cObj = COLORS_CATALOG.find(c => c.id === saveData.equippedColor) || COLORS_CATALOG[0];
+        const aObj = ACCESSORIES_CATALOG.find(a => a.id === saveData.equippedAccessory) || ACCESSORIES_CATALOG[0];
+        document.getElementById('preview-summary').textContent =
+            `${bObj.name} • ${cObj.name}` + (aObj.id !== 'none' ? ` • ${aObj.name}` : '');
+
+        const grid = document.getElementById('store-items-grid');
+        grid.innerHTML = '';
+
+        if (activeStoreTab === 'birds') {
+            BIRDS_CATALOG.forEach(item => {
+                const owned = saveData.unlockedBirds.includes(item.id);
+                const equipped = saveData.equippedBird === item.id;
+                const card = createStoreCard({
+                    badgeHtml: `<div class="item-swatch" style="background:#fff3c4;">🐦</div>`,
+                    name: item.name,
+                    desc: item.desc,
+                    owned,
+                    equipped,
+                    price: item.price,
+                    onClick: () => {
+                        if (owned) {
+                            saveData.equippedBird = item.id;
+                            persistSave();
+                            audio.playFlap();
+                            renderStore();
+                        } else if (saveData.bank >= item.price) {
+                            saveData.bank -= item.price;
+                            saveData.unlockedBirds.push(item.id);
+                            saveData.equippedBird = item.id;
+                            persistSave();
+                            updateHUD();
+                            audio.playPurchase();
+                            showToast(`תתחדשו על ${item.name}!`);
+                            renderStore();
+                        }
+                    }
+                });
+                grid.appendChild(card);
+            });
+        } else if (activeStoreTab === 'colors') {
+            COLORS_CATALOG.forEach(item => {
+                const owned = saveData.unlockedColors.includes(item.id);
+                const equipped = saveData.equippedColor === item.id;
+                const card = createStoreCard({
+                    badgeHtml: `<div class="item-swatch" style="background:${item.accent}; border-color:${item.stroke};">🖌️</div>`,
+                    name: item.name,
+                    desc: 'צבע טוש מיוחד לציפור',
+                    owned,
+                    equipped,
+                    price: item.price,
+                    onClick: () => {
+                        if (owned) {
+                            saveData.equippedColor = item.id;
+                            persistSave();
+                            audio.playFlap();
+                            renderStore();
+                        } else if (saveData.bank >= item.price) {
+                            saveData.bank -= item.price;
+                            saveData.unlockedColors.push(item.id);
+                            saveData.equippedColor = item.id;
+                            persistSave();
+                            updateHUD();
+                            audio.playPurchase();
+                            showToast(`הציפור נצבעה ב${item.name}!`);
+                            renderStore();
+                        }
+                    }
+                });
+                grid.appendChild(card);
+            });
+        } else if (activeStoreTab === 'accessories') {
+            ACCESSORIES_CATALOG.forEach(item => {
+                const owned = saveData.unlockedAccessories.includes(item.id);
+                const equipped = saveData.equippedAccessory === item.id;
+                const card = createStoreCard({
+                    badgeHtml: `<div class="item-swatch" style="background:#e8f0fe;">${item.icon}</div>`,
+                    name: item.name,
+                    desc: item.desc,
+                    owned,
+                    equipped,
+                    price: item.price,
+                    onClick: () => {
+                        if (owned) {
+                            saveData.equippedAccessory = item.id;
+                            persistSave();
+                            audio.playFlap();
+                            renderStore();
+                        } else if (saveData.bank >= item.price) {
+                            saveData.bank -= item.price;
+                            saveData.unlockedAccessories.push(item.id);
+                            saveData.equippedAccessory = item.id;
+                            persistSave();
+                            updateHUD();
+                            audio.playPurchase();
+                            showToast(`האביזר "${item.name}" נרכש!`);
+                            renderStore();
+                        }
+                    }
+                });
+                grid.appendChild(card);
+            });
+        }
+    }
+
+    function createStoreCard({ badgeHtml, name, desc, owned, equipped, price, onClick }) {
+        const card = document.createElement('div');
+        card.className = 'store-item-card' + (equipped ? ' equipped' : '');
+
+        let btnLabel = '';
+        let btnClass = 'sketch-btn item-action-btn';
+        let disabled = false;
+
+        if (equipped) {
+            btnLabel = '✅ בשימוש';
+            btnClass += ' success';
+        } else if (owned) {
+            btnLabel = 'בחר';
+        } else {
+            btnLabel = `🪙 ${price}`;
+            if (saveData.bank < price) disabled = true;
+        }
+
+        card.innerHTML = `
+            ${badgeHtml}
+            <div class="item-name">${name}</div>
+            <div class="item-desc">${desc}</div>
+            <button class="${btnClass}" ${disabled ? 'disabled' : ''}>${btnLabel}</button>
+        `;
+
+        card.querySelector('button').addEventListener('click', onClick);
+        return card;
+    }
+
+    // =========================================================================
+    // 8. קלט מקלדת וכפתורי מגע
+    // =========================================================================
+    function setControlState(dir, isPressed) {
+        if (isPressed && gameState === 'START') {
+            startLevel();
+        }
+        inputState[dir] = isPressed;
+        const btnEl = document.getElementById(`ctrl-${dir}`);
+        if (btnEl) btnEl.classList.toggle('active-press', isPressed);
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'ArrowUp' || e.code === 'KeyW') {
+            e.preventDefault();
+            setControlState('up', true);
+        } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+            e.preventDefault();
+            setControlState('down', true);
+        } else if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+            e.preventDefault();
+            setControlState('right', true);
+        } else if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+            e.preventDefault();
+            setControlState('left', true);
+        } else if (e.code === 'Space' && gameState === 'START') {
+            e.preventDefault();
+            startLevel();
+        } else if (e.code === 'KeyP' || e.code === 'Escape') {
+            if (gameState === 'STORE') closeStore();
+            else if (gameState === 'PLAYING' || gameState === 'PAUSED') togglePause();
+        }
+    });
+
+    window.addEventListener('keyup', (e) => {
+        if (e.code === 'ArrowUp' || e.code === 'KeyW') setControlState('up', false);
+        else if (e.code === 'ArrowDown' || e.code === 'KeyS') setControlState('down', false);
+        else if (e.code === 'ArrowRight' || e.code === 'KeyD') setControlState('right', false);
+        else if (e.code === 'ArrowLeft' || e.code === 'KeyA') setControlState('left', false);
+    });
+
+    window.addEventListener('blur', () => {
+        ['up', 'down', 'left', 'right'].forEach(d => setControlState(d, false));
+    });
+
+    ['up', 'down', 'left', 'right'].forEach(dir => {
+        const btn = document.getElementById(`ctrl-${dir}`);
+        if (!btn) return;
+        btn.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            btn.setPointerCapture(e.pointerId);
+            setControlState(dir, true);
+        });
+        const release = (e) => {
+            e.preventDefault();
+            setControlState(dir, false);
+        };
+        btn.addEventListener('pointerup', release);
+        btn.addEventListener('pointercancel', release);
+    });
+
+    // כפתורי ממשק
+    document.getElementById('btn-start').addEventListener('click', startLevel);
+    document.getElementById('btn-next-level').addEventListener('click', startLevel);
+    document.getElementById('btn-restart-pause').addEventListener('click', startLevel);
+    document.getElementById('btn-resume').addEventListener('click', togglePause);
+    document.getElementById('btn-pause').addEventListener('click', togglePause);
+
+    document.getElementById('btn-open-store-hud').addEventListener('click', openStore);
+    document.getElementById('btn-start-store').addEventListener('click', openStore);
+    document.getElementById('btn-lc-store').addEventListener('click', openStore);
+    document.getElementById('btn-close-store').addEventListener('click', closeStore);
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            activeStoreTab = btn.dataset.tab;
+            renderStore();
+        });
+    });
+
+    document.getElementById('btn-mute').addEventListener('click', () => {
+        const isMuted = audio.toggleMute();
+        document.getElementById('mute-label').textContent = isMuted ? '🔇 מושתק' : '🔊 צליל';
+    });
+
+    document.getElementById('btn-paper').addEventListener('click', () => {
+        paperModeIndex = (paperModeIndex + 1) % PAPER_MODES.length;
+    });
+
+    // =========================================================================
+    // 9. לולאת עדכון הפיזיקה והמשחק
+    // =========================================================================
+    function update(dt) {
+        bird.wingPhase += dt * (gameState === 'PLAYING' ? (inputState.up ? 18 : 10) : 7);
+
+        if (gameState !== 'PLAYING') {
+            if (gameState === 'START' || gameState === 'STORE') {
+                scrollOffset += 60 * dt;
+                updateClouds(dt, 60);
+            }
+            return;
+        }
+
+        // ספירה לאחור של זמן השלב
+        levelTimeLeft -= dt;
+        if (levelTimeLeft <= 0) {
+            levelTimeLeft = 0;
+            finishLevel();
+            return;
+        }
+
+        // התאמת מהירות: ימינה (מהר ++), שמאלה (לאט --)
+        const speedAccelRate = 290;
+        if (inputState.right) speedOffset += speedAccelRate * dt;
+        if (inputState.left) speedOffset -= speedAccelRate * dt;
+
+        const minSpeed = 120;
+        const maxSpeed = 680;
+        speedOffset = Math.max(minSpeed - baseSpeed, Math.min(maxSpeed - baseSpeed, speedOffset));
+
+        const targetSpeed = baseSpeed + speedOffset;
+        currentSpeed += (targetSpeed - currentSpeed) * Math.min(1, dt * 8);
+
+        const targetX = bird.baseX + (speedOffset / 320) * 45;
+        bird.x += (targetX - bird.x) * Math.min(1, dt * 6);
+
+        scrollOffset += currentSpeed * dt;
+        nextPatternX -= currentSpeed * dt;
+
+        if (coinsSpawnedInLevel < COINS_PER_LEVEL && nextPatternX < width + 220) {
+            spawnCoinPattern();
+        }
+
+        // שמירת גובה ללא נפילה: רק לחיצה למעלה או למטה משנה גובה
+        let targetVy = 0;
+        if (inputState.up && !inputState.down) targetVy = -bird.verticalSpeed;
+        else if (inputState.down && !inputState.up) targetVy = bird.verticalSpeed;
+
+        bird.vy += (targetVy - bird.vy) * Math.min(1, dt * 14);
+        bird.y += bird.vy * dt;
+
+        const targetTilt = (bird.vy / bird.verticalSpeed) * 0.32;
+        bird.tilt += (targetTilt - bird.tilt) * Math.min(1, dt * 12);
+
+        const ceilY = getCeilingY() + bird.radius;
+        const floorY = getGroundY() - bird.radius;
+        if (bird.y < ceilY) { bird.y = ceilY; bird.vy = 0; }
+        if (bird.y > floorY) { bird.y = floorY; bird.vy = 0; }
+
+        // עדכון מטבעות ובדיקת איסוף
+        for (let i = coins.length - 1; i >= 0; i--) {
+            const c = coins[i];
+            c.x -= currentSpeed * dt;
+            c.bobPhase += dt * 4.2;
+            c.y = c.baseY + Math.sin(c.bobPhase) * 4;
+
+            if (!c.collected) {
+                const dx = bird.x - c.x;
+                const dy = bird.y - c.y;
+                const hitDist = bird.radius + c.radius + 6;
+                if (dx * dx + dy * dy <= hitDist * hitDist) {
+                    c.collected = true;
+                    levelCoinsCaught++;
+                    levelCoinsEarned += c.value;
+                    audio.playCoin(c.isBonus5);
+
+                    for (let p = 0; p < 8; p++) {
+                        const angle = (Math.PI * 2 * p) / 8 + Math.random() * 0.3;
+                        const spd = 70 + Math.random() * 85;
+                        particles.push({
+                            x: c.x,
+                            y: c.y,
+                            vx: Math.cos(angle) * spd,
+                            vy: Math.sin(angle) * spd,
+                            life: 0.4,
+                            maxLife: 0.4,
+                            size: 2.6 + Math.random() * 2
+                        });
+                    }
+
+                    floatingTexts.push({
+                        x: c.x,
+                        y: c.y - 12,
+                        text: `+${c.value}`,
+                        life: 0.72,
+                        maxLife: 0.72
+                    });
+
+                    // אם נתפסו כל 100 המטבעות לפני תום הזמן — מסיימים את השלב מיד!
+                    if (levelCoinsCaught >= COINS_PER_LEVEL) {
+                        updateHUD();
+                        finishLevel();
+                        return;
+                    }
+                }
+            }
+
+            if (c.collected || c.x < -60) {
+                coins.splice(i, 1);
+            }
+        }
+
+        // אם כל 100 המטבעות כבר עברו את המסך, מסיימים שלב מיד בלי להמתין סתם
+        if (coinsSpawnedInLevel >= COINS_PER_LEVEL && coins.length === 0) {
+            updateHUD();
+            finishLevel();
+            return;
+        }
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            p.life -= dt;
+            if (p.life <= 0) particles.splice(i, 1);
+        }
+
+        for (let i = floatingTexts.length - 1; i >= 0; i--) {
+            const ft = floatingTexts[i];
+            ft.y -= 42 * dt;
+            ft.life -= dt;
+            if (ft.life <= 0) floatingTexts.splice(i, 1);
+        }
+
+        for (const wl of windLines) {
+            wl.x -= currentSpeed * 1.45 * dt;
+            if (wl.x + wl.len < 0) {
+                wl.x = width + Math.random() * 140;
+                wl.y = getCeilingY() + 20 + Math.random() * (getGroundY() - getCeilingY() - 40);
+            }
+        }
+
+        updateClouds(dt, currentSpeed);
+        updateHUD();
+    }
+
+    function updateClouds(dt, speed) {
+        for (const cl of clouds) {
+            cl.x -= speed * cl.speedFactor * dt;
+            if (cl.x < -120) {
+                cl.x = width + 100 + Math.random() * 80;
+                cl.y = getCeilingY() + 28 + Math.random() * (height * 0.5);
+            }
+        }
+    }
+
+    // =========================================================================
+    // 10. ציור הרקע, הציפורים המותאמות אישית, האביזרים והמטבעות
+    // =========================================================================
+    function drawBackground() {
+        ctx.clearRect(0, 0, width, height);
+
+        const mode = PAPER_MODES[paperModeIndex];
+        if (mode === 'ruled') {
+            const lineGap = 34;
+            ctx.strokeStyle = 'rgba(115, 148, 185, 0.24)';
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            for (let y = 40; y < height; y += lineGap) {
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+            }
+            ctx.stroke();
+
+            // קו שוליים אדום של מחברת
+            const marginX = Math.max(54, bird.baseX - 75);
+            ctx.strokeStyle = 'rgba(218, 92, 92, 0.30)';
+            ctx.lineWidth = 1.6;
+            ctx.beginPath();
+            ctx.moveTo(marginX, 0);
+            ctx.lineTo(marginX, height);
+            ctx.stroke();
+        } else if (mode === 'grid') {
+            const gridSize = 32;
+            const offsetX = -(scrollOffset * 0.35) % gridSize;
+            ctx.strokeStyle = 'rgba(115, 148, 185, 0.22)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (let x = offsetX; x < width; x += gridSize) {
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+            }
+            for (let y = 0; y < height; y += gridSize) {
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+            }
+            ctx.stroke();
+        }
+
+        // עננים מצוירים בעפרון
+        ctx.strokeStyle = 'rgba(30, 32, 36, 0.16)';
+        ctx.lineWidth = 1.6;
+        for (const cl of clouds) {
+            ctx.save();
+            ctx.translate(cl.x, cl.y);
+            ctx.scale(cl.scale, cl.scale);
+            ctx.beginPath();
+            ctx.moveTo(-36, 10);
+            ctx.quadraticCurveTo(-44, -6, -24, -10);
+            ctx.quadraticCurveTo(-16, -28, 6, -22);
+            ctx.quadraticCurveTo(26, -28, 34, -8);
+            ctx.quadraticCurveTo(50, -4, 42, 10);
+            ctx.closePath();
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // קווי רוח בהאצה
+        const boostRatio = Math.max(0, (currentSpeed - baseSpeed) / 300);
+        if (boostRatio > 0.08 && gameState === 'PLAYING') {
+            ctx.strokeStyle = `rgba(30, 32, 36, ${Math.min(0.28, boostRatio * 0.25)})`;
+            ctx.lineWidth = 1.4;
+            ctx.beginPath();
+            for (const wl of windLines) {
+                ctx.moveTo(wl.x, wl.y);
+                ctx.lineTo(wl.x + wl.len * (0.6 + boostRatio * 0.8), wl.y);
+            }
+            ctx.stroke();
+        }
+
+        // קו קרקע עם קווים אלכסוניים
+        const groundY = getGroundY();
+        ctx.strokeStyle = '#1e2024';
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        ctx.moveTo(0, groundY);
+        ctx.lineTo(width, groundY);
+        ctx.stroke();
+
+        const tickSpacing = 22;
+        const tickOffset = -(scrollOffset % tickSpacing);
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = 'rgba(30, 32, 36, 0.45)';
+        ctx.beginPath();
+        for (let x = tickOffset; x < width + tickSpacing; x += tickSpacing) {
+            ctx.moveTo(x, groundY + 2);
+            ctx.lineTo(x - 10, groundY + 14);
+        }
+        ctx.stroke();
+    }
+
+    /**
+     * פונקציה גנרית שמציירת כל אחת מ-6 הציפורים + צבע הטוש + האביזר הנבחר
+     */
+    function drawCustomizedBird(targetCtx, x, y, tilt, wingPhase, scale = 1) {
+        const birdSpec = BIRDS_CATALOG.find(b => b.id === saveData.equippedBird) || BIRDS_CATALOG[0];
+        const colorSpec = COLORS_CATALOG.find(c => c.id === saveData.equippedColor) || COLORS_CATALOG[0];
+        const accId = saveData.equippedAccessory || 'none';
+
+        targetCtx.save();
+        targetCtx.translate(x, y + Math.sin(wingPhase * 0.5) * 2.2);
+        targetCtx.scale(scale, scale);
+        targetCtx.rotate(tilt);
+
+        const ink = colorSpec.stroke;
+        const fill = colorSpec.fill;
+        const accent = colorSpec.accent;
+        const flap = Math.sin(wingPhase);
+
+        targetCtx.lineCap = 'round';
+        targetCtx.lineJoin = 'round';
+
+        // 1. גלימת גיבור-על (אם נבחרה - מצוירת מאחורי הגוף)
+        if (accId === 'cape') {
+            targetCtx.save();
+            targetCtx.translate(birdSpec.backAnchor.x, birdSpec.backAnchor.y);
+            targetCtx.fillStyle = '#ef4444';
+            targetCtx.strokeStyle = ink;
+            targetCtx.lineWidth = 1.8;
+            targetCtx.beginPath();
+            targetCtx.moveTo(0, -2);
+            targetCtx.quadraticCurveTo(-18, -10 + flap * 4, -36, -4 - flap * 5);
+            targetCtx.lineTo(-32, 10 + flap * 4);
+            targetCtx.quadraticCurveTo(-16, 6, 0, 2);
+            targetCtx.closePath();
+            targetCtx.fill();
+            targetCtx.stroke();
+            targetCtx.restore();
+        }
+
+        // 2. ציור גוף הציפור לפי הסוג שנבחר
+        if (birdSpec.id === 'sketch') {
+            // הציפור המקורית מהסקיצה של המשתמש
+            targetCtx.strokeStyle = ink;
+            targetCtx.lineWidth = 2;
+            targetCtx.beginPath();
+            targetCtx.moveTo(8, 0);
+            targetCtx.lineTo(-30, -0.5);
+            targetCtx.stroke();
+
+            // זנב וזיפים
+            [[-20, 0, -25, -6.5], [-23.5, 0, -29, -7.5], [-27, -0.3, -32.5, -5.5],
+             [-20, 0, -25, 6.5], [-23.5, 0, -29, 7.5], [-27, -0.3, -32.5, 5.5]].forEach(([x1, y1, x2, y2]) => {
+                targetCtx.lineWidth = 1.5;
+                targetCtx.beginPath();
+                targetCtx.moveTo(x1, y1);
+                targetCtx.lineTo(x2, y2);
+                targetCtx.stroke();
+            });
+
+            // כנף עליונה גדולה
+            targetCtx.save();
+            targetCtx.translate(-5, -0.5);
+            targetCtx.rotate(-0.12 + flap * 0.28);
+            targetCtx.fillStyle = accent;
+            targetCtx.strokeStyle = ink;
+            targetCtx.lineWidth = 1.85;
+            targetCtx.beginPath();
+            targetCtx.moveTo(0, 0);
+            targetCtx.quadraticCurveTo(-9, -14, -16, -26);
+            targetCtx.quadraticCurveTo(-20, -30, -23, -25);
+            targetCtx.quadraticCurveTo(-26, -28, -28, -22);
+            targetCtx.quadraticCurveTo(-32, -24, -31, -17);
+            targetCtx.quadraticCurveTo(-21, -7, -11, 0);
+            targetCtx.closePath();
+            targetCtx.fill();
+            targetCtx.stroke();
+            targetCtx.restore();
+
+            // כנף תחתונה קטנה
+            targetCtx.save();
+            targetCtx.translate(-6, 0.5);
+            targetCtx.rotate(0.1 - flap * 0.25);
+            targetCtx.fillStyle = accent;
+            targetCtx.strokeStyle = ink;
+            targetCtx.lineWidth = 1.8;
+            targetCtx.beginPath();
+            targetCtx.moveTo(0, 0);
+            targetCtx.quadraticCurveTo(2, 9, -4, 14);
+            targetCtx.quadraticCurveTo(-7, 18, -10, 14);
+            targetCtx.quadraticCurveTo(-13, 17, -15, 12);
+            targetCtx.quadraticCurveTo(-19, 13, -17, 7);
+            targetCtx.quadraticCurveTo(-14, 2, -10, 0);
+            targetCtx.closePath();
+            targetCtx.fill();
+            targetCtx.stroke();
+            targetCtx.restore();
+
+            // ראש עגול ומקור מחודד
+            targetCtx.fillStyle = fill;
+            targetCtx.strokeStyle = ink;
+            targetCtx.lineWidth = 1.9;
+            targetCtx.beginPath();
+            targetCtx.ellipse(14, 0, 9.2, 8.6, -0.15, 0, Math.PI * 2);
+            targetCtx.fill();
+            targetCtx.stroke();
+
+            targetCtx.fillStyle = accent;
+            targetCtx.beginPath();
+            targetCtx.moveTo(22.2, -3.6);
+            targetCtx.lineTo(34.5, 0.8);
+            targetCtx.lineTo(22.0, 4.2);
+            targetCtx.closePath();
+            targetCtx.fill();
+            targetCtx.stroke();
+
+            targetCtx.fillStyle = ink;
+            targetCtx.beginPath();
+            targetCtx.arc(16.8, -2.0, 1.8, 0, Math.PI * 2);
+            targetCtx.fill();
+
+        } else if (birdSpec.id === 'flamingo') {
+            // רגליים ארוכות מאחור
+            targetCtx.strokeStyle = ink;
+            targetCtx.lineWidth = 1.7;
+            targetCtx.beginPath();
+            targetCtx.moveTo(-14, 3); targetCtx.lineTo(-34, 6);
+            targetCtx.moveTo(-14, 6); targetCtx.lineTo(-33, 11);
+            targetCtx.stroke();
+
+            // גוף אליפטי וצוואר S ארוך
+            targetCtx.fillStyle = fill;
+            targetCtx.strokeStyle = ink;
+            targetCtx.lineWidth = 2;
+            targetCtx.beginPath();
+            targetCtx.ellipse(-4, 2, 14, 9, -0.1, 0, Math.PI * 2);
+            targetCtx.fill();
+            targetCtx.stroke();
+
+            // צוואר מעוקל וראש
+            targetCtx.lineWidth = 3.2;
+            targetCtx.beginPath();
+            targetCtx.moveTo(8, 0);
+            targetCtx.bezierCurveTo(16, 0, 14, -12, 22, -11);
+            targetCtx.stroke();
+
+            targetCtx.fillStyle = fill;
+            targetCtx.lineWidth = 1.9;
+            targetCtx.beginPath();
+            targetCtx.arc(22, -11, 5.5, 0, Math.PI * 2);
+            targetCtx.fill();
+            targetCtx.stroke();
+
+            // מקור פלמינגו מעוקל כלפי מטה
+            targetCtx.fillStyle = accent;
+            targetCtx.beginPath();
+            targetCtx.moveTo(27, -12);
+            targetCtx.quadraticCurveTo(35, -11, 34, -4);
+            targetCtx.lineTo(27, -8);
+            targetCtx.closePath();
+            targetCtx.fill();
+            targetCtx.stroke();
+
+            // כנף מתנופפת
+            targetCtx.save();
+            targetCtx.translate(-4, 0);
+            targetCtx.rotate(flap * 0.35);
+            targetCtx.fillStyle = accent;
+            targetCtx.beginPath();
+            targetCtx.ellipse(-3, -4, 11, 5, -0.3, 0, Math.PI * 2);
+            targetCtx.fill();
+            targetCtx.stroke();
+            targetCtx.restore();
+
+            targetCtx.fillStyle = ink;
+            targetCtx.beginPath();
+            targetCtx.arc(23.5, -12, 1.5, 0, Math.PI * 2);
+            targetCtx.fill();
+
+        } else if (birdSpec.id === 'goose') {
+            // גוף אווז שמנמן
+            targetCtx.fillStyle = fill;
+            targetCtx.strokeStyle = ink;
+            targetCtx.lineWidth = 2;
+            targetCtx.beginPath();
+            targetCtx.ellipse(-5, 3, 16, 10, 0, 0, Math.PI * 2);
+            targetCtx.fill();
+            targetCtx.stroke();
+
+            // צוואר זקוף וראש
+            targetCtx.beginPath();
+            targetCtx.moveTo(8, -1);
+            targetCtx.quadraticCurveTo(13, -9, 20, -8);
+            targetCtx.lineTo(20, -2);
+            targetCtx.quadraticCurveTo(14, 1, 9, 5);
+            targetCtx.fill();
+            targetCtx.stroke();
+
+            targetCtx.beginPath();
+            targetCtx.arc(20, -6, 6.2, 0, Math.PI * 2);
+            targetCtx.fill();
+            targetCtx.stroke();
+
+            // מקור אווז כתום/מודגש שטוח
+            targetCtx.fillStyle = '#fb923c';
+            targetCtx.beginPath();
+            targetCtx.roundRect(25, -7.5, 11, 5, 2.5);
+            targetCtx.fill();
+            targetCtx.stroke();
+
+            // כנף
+            targetCtx.save();
+            targetCtx.translate(-5, 1);
+            targetCtx.rotate(flap * 0.32);
+            targetCtx.fillStyle = accent;
+            targetCtx.beginPath();
+            targetCtx.ellipse(-3, -3, 12, 6, -0.25, 0, Math.PI * 2);
+            targetCtx.fill();
+            targetCtx.stroke();
+            targetCtx.restore();
+
+            targetCtx.fillStyle = ink;
+            targetCtx.beginPath();
+            targetCtx.arc(22, -7.2, 1.6, 0, Math.PI * 2);
+            targetCtx.fill();
+
+        } else if (birdSpec.id === 'parrot') {
+            // זנב ארוך
+            targetCtx.fillStyle = accent;
+            targetCtx.strokeStyle = ink;
+            targetCtx.lineWidth = 1.9;
+            targetCtx.beginPath();
+            targetCtx.moveTo(-14, 2);
+            targetCtx.lineTo(-34, -3);
+            targetCtx.lineTo(-31, 4);
+            targetCtx.lineTo(-35, 9);
+            targetCtx.lineTo(-14, 6);
+            targetCtx.closePath();
+            targetCtx.fill();
+            targetCtx.stroke();
+
+            // גוף וראש
+            targetCtx.fillStyle = fill;
+            targetCtx.beginPath();
+            targetCtx.ellipse(-3, 2, 13, 9.5, -0.1, 0, Math.PI * 2);
+            targetCtx.fill();
+            targetCtx.stroke();
+
+            targetCtx.beginPath();
+            targetCtx.arc(13, -2, 8.5, 0, Math.PI * 2);
+            targetCtx.fill();
+            targetCtx.stroke();
+
+            // כרבולת תוכי
+            targetCtx.strokeStyle = ink;
+            targetCtx.beginPath();
+            targetCtx.moveTo(11, -10); targetCtx.quadraticCurveTo(7, -17, 3, -15);
+            targetCtx.moveTo(14, -10); targetCtx.quadraticCurveTo(12, -18, 8, -17);
+            targetCtx.stroke();
+
+            // מקור תוכי מעוקל
+            targetCtx.fillStyle = accent;
+            targetCtx.beginPath();
+            targetCtx.moveTo(20.5, -4.5);
+            targetCtx.quadraticCurveTo(29, -4, 28, 4);
+            targetCtx.quadraticCurveTo(24, 1, 20.5, 2);
+            targetCtx.closePath();
+            targetCtx.fill();
+            targetCtx.stroke();
+
+            // כנף
+            targetCtx.save();
+            targetCtx.translate(-4, 1);
+            targetCtx.rotate(flap * 0.35);
+            targetCtx.fillStyle = accent;
+            targetCtx.beginPath();
+            targetCtx.ellipse(-3, -2, 11, 5.5, -0.2, 0, Math.PI * 2);
+            targetCtx.fill();
+            targetCtx.stroke();
+            targetCtx.restore();
+
+            targetCtx.fillStyle = ink;
+            targetCtx.beginPath();
+            targetCtx.arc(15.5, -3.5, 1.8, 0, Math.PI * 2);
+            targetCtx.fill();
+
+        } else if (birdSpec.id === 'owl') {
+            // גוף וראש עגולים של ינשוף
+            targetCtx.fillStyle = fill;
+            targetCtx.strokeStyle = ink;
+            targetCtx.lineWidth = 2;
+            targetCtx.beginPath();
+            targetCtx.ellipse(-4, 3, 13, 11, 0, 0, Math.PI * 2);
+            targetCtx.fill();
+            targetCtx.stroke();
+
+            targetCtx.beginPath();
+            targetCtx.arc(12, -2, 9.5, 0, Math.PI * 2);
+            targetCtx.fill();
+            targetCtx.stroke();
+
+            // אוזניים מחודדות
+            targetCtx.fillStyle = accent;
+            targetCtx.beginPath();
+            targetCtx.moveTo(7, -9); targetCtx.lineTo(5, -16); targetCtx.lineTo(11, -11);
+            targetCtx.moveTo(14, -11); targetCtx.lineTo(18, -16); targetCtx.lineTo(18, -9);
+            targetCtx.fill();
+            targetCtx.stroke();
+
+            // עיני ינשוף גדולות
+            targetCtx.fillStyle = '#ffffff';
+            targetCtx.beginPath();
+            targetCtx.arc(11, -3, 3.4, 0, Math.PI * 2);
+            targetCtx.arc(17.5, -3, 3.4, 0, Math.PI * 2);
+            targetCtx.fill();
+            targetCtx.stroke();
+
+            targetCtx.fillStyle = ink;
+            targetCtx.beginPath();
+            targetCtx.arc(11.6, -3, 1.4, 0, Math.PI * 2);
+            targetCtx.arc(18.1, -3, 1.4, 0, Math.PI * 2);
+            targetCtx.fill();
+
+            // מקור קטן
+            targetCtx.fillStyle = '#fb923c';
+            targetCtx.beginPath();
+            targetCtx.moveTo(14, -1); targetCtx.lineTo(16.5, 3); targetCtx.lineTo(12, 3);
+            targetCtx.closePath();
+            targetCtx.fill();
+            targetCtx.stroke();
+
+            // כנף
+            targetCtx.save();
+            targetCtx.translate(-4, 2);
+            targetCtx.rotate(flap * 0.3);
+            targetCtx.fillStyle = accent;
+            targetCtx.beginPath();
+            targetCtx.ellipse(-2, -2, 10, 6, -0.2, 0, Math.PI * 2);
+            targetCtx.fill();
+            targetCtx.stroke();
+            targetCtx.restore();
+
+        } else if (birdSpec.id === 'crane') {
+            // עגור אוריגמי מקופל מנייר
+            targetCtx.fillStyle = fill;
+            targetCtx.strokeStyle = ink;
+            targetCtx.lineWidth = 1.9;
+
+            // גוף יהלום
+            targetCtx.beginPath();
+            targetCtx.moveTo(-12, 3);
+            targetCtx.lineTo(2, -5);
+            targetCtx.lineTo(14, 3);
+            targetCtx.lineTo(0, 10);
+            targetCtx.closePath();
+            targetCtx.fill();
+            targetCtx.stroke();
+
+            // זנב משולש חד
+            targetCtx.fillStyle = accent;
+            targetCtx.beginPath();
+            targetCtx.moveTo(-12, 3);
+            targetCtx.lineTo(-27, -13);
+            targetCtx.lineTo(-6, 5);
+            targetCtx.closePath();
+            targetCtx.fill();
+            targetCtx.stroke();
+
+            // צוואר וראש מקופלים
+            targetCtx.fillStyle = fill;
+            targetCtx.beginPath();
+            targetCtx.moveTo(10, 1);
+            targetCtx.lineTo(19, -11);
+            targetCtx.lineTo(31, -6);
+            targetCtx.lineTo(19, -5);
+            targetCtx.lineTo(14, 3);
+            targetCtx.closePath();
+            targetCtx.fill();
+            targetCtx.stroke();
+
+            // כנף משולשת מתנופפת
+            targetCtx.save();
+            targetCtx.translate(1, -2);
+            targetCtx.rotate(flap * 0.32);
+            targetCtx.fillStyle = accent;
+            targetCtx.beginPath();
+            targetCtx.moveTo(-7, 2);
+            targetCtx.lineTo(-14, -22);
+            targetCtx.lineTo(7, 2);
+            targetCtx.closePath();
+            targetCtx.fill();
+            targetCtx.stroke();
+            targetCtx.restore();
+        }
+
+        // 3. ציור האביזר הנבחר על הראש או הצוואר
+        if (accId !== 'none') {
+            if (accId === 'bowtie') {
+                targetCtx.save();
+                targetCtx.translate(birdSpec.neckAnchor.x, birdSpec.neckAnchor.y + 4);
+                targetCtx.fillStyle = '#ec4899';
+                targetCtx.strokeStyle = ink;
+                targetCtx.lineWidth = 1.6;
+                targetCtx.beginPath();
+                targetCtx.moveTo(0, 0); targetCtx.lineTo(-6, -4); targetCtx.lineTo(-6, 4); targetCtx.closePath();
+                targetCtx.moveTo(0, 0); targetCtx.lineTo(6, -4); targetCtx.lineTo(6, 4); targetCtx.closePath();
+                targetCtx.fill();
+                targetCtx.stroke();
+                targetCtx.restore();
+            } else {
+                targetCtx.save();
+                targetCtx.translate(birdSpec.headAnchor.x, birdSpec.headAnchor.y);
+                targetCtx.strokeStyle = ink;
+                targetCtx.lineWidth = 1.7;
+
+                if (accId === 'crown') {
+                    targetCtx.fillStyle = '#facc15';
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(-7, 0);
+                    targetCtx.lineTo(-8, -9);
+                    targetCtx.lineTo(-3, -4);
+                    targetCtx.lineTo(0, -11);
+                    targetCtx.lineTo(3, -4);
+                    targetCtx.lineTo(8, -9);
+                    targetCtx.lineTo(7, 0);
+                    targetCtx.closePath();
+                    targetCtx.fill();
+                    targetCtx.stroke();
+                } else if (accId === 'wizard') {
+                    targetCtx.fillStyle = '#7e22ce';
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(-11, 0);
+                    targetCtx.lineTo(11, 0);
+                    targetCtx.lineTo(0, -17);
+                    targetCtx.closePath();
+                    targetCtx.fill();
+                    targetCtx.stroke();
+                } else if (accId === 'cap') {
+                    targetCtx.fillStyle = '#3b82f6';
+                    targetCtx.beginPath();
+                    targetCtx.arc(0, 0, 7.5, Math.PI, 0);
+                    targetCtx.lineTo(13, 0);
+                    targetCtx.lineTo(-7.5, 0);
+                    targetCtx.closePath();
+                    targetCtx.fill();
+                    targetCtx.stroke();
+                } else if (accId === 'sunglasses') {
+                    targetCtx.fillStyle = '#111827';
+                    targetCtx.beginPath();
+                    targetCtx.roundRect(-2, 2, 11, 5.5, 1.5);
+                    targetCtx.fill();
+                    targetCtx.stroke();
+                }
+                targetCtx.restore();
+            }
+        }
+
+        targetCtx.restore();
+    }
+
+    function drawSketchCoin(coin) {
+        ctx.save();
+        ctx.translate(coin.x, coin.y);
+
+        ctx.fillStyle = coin.isBonus5 ? '#fde047' : '#fff3cc';
+        ctx.strokeStyle = '#1e2024';
+        ctx.lineWidth = 2.2;
+
+        ctx.beginPath();
+        ctx.ellipse(0, 0, coin.radius, coin.radius * 0.94, 0.15, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.lineWidth = 1.1;
+        ctx.strokeStyle = 'rgba(30, 32, 36, 0.38)';
+        ctx.beginPath();
+        ctx.arc(0, 0, coin.radius - 3.5, Math.PI * 1.1, Math.PI * 1.75);
+        ctx.stroke();
+
+        ctx.fillStyle = '#1e2024';
+        ctx.font = '800 15px "Rubik", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(coin.value), 0, 1);
+
+        ctx.restore();
+    }
+
+    function drawEffects() {
+        for (const p of particles) {
+            const alpha = Math.max(0, p.life / p.maxLife);
+            ctx.fillStyle = `rgba(229, 169, 26, ${alpha})`;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        ctx.font = '800 19px "Rubik", sans-serif';
+        ctx.textAlign = 'center';
+        for (const ft of floatingTexts) {
+            const alpha = Math.max(0, ft.life / ft.maxLife);
+            ctx.fillStyle = `rgba(30, 32, 36, ${alpha})`;
+            ctx.fillText(ft.text, ft.x, ft.y);
+        }
+    }
+
+    function renderPreviewCanvas() {
+        if (gameState !== 'STORE') return;
+        previewCtx.clearRect(0, 0, 180, 140);
+
+        // קווי מחברת עדינים בתצוגה המקדימה
+        previewCtx.strokeStyle = 'rgba(115, 148, 185, 0.28)';
+        previewCtx.lineWidth = 1;
+        previewCtx.beginPath();
+        for (let y = 24; y < 140; y += 26) {
+            previewCtx.moveTo(0, y);
+            previewCtx.lineTo(180, y);
+        }
+        previewCtx.stroke();
+
+        drawCustomizedBird(previewCtx, 90, 74, 0, bird.wingPhase, 1.55);
+    }
+
+    function render() {
+        drawBackground();
+        for (const coin of coins) {
+            if (!coin.collected) drawSketchCoin(coin);
+        }
+        drawCustomizedBird(ctx, bird.x, bird.y, bird.tilt, bird.wingPhase, 1);
+        drawEffects();
+        renderPreviewCanvas();
+    }
+
+    // =========================================================================
+    // 11. לולאת אנימציה ראשית
+    // =========================================================================
+    function gameLoop(timestamp) {
+        if (!lastTimestamp) lastTimestamp = timestamp;
+        const dt = Math.min(0.05, (timestamp - lastTimestamp) / 1000);
+        lastTimestamp = timestamp;
+
+        update(dt);
+        render();
+        requestAnimationFrame(gameLoop);
+    }
+
+    window.onload = () => {
+        resizeCanvas();
+        initBackgroundDoodles();
+        updateHUD();
+        requestAnimationFrame(gameLoop);
+    };
+})();
+</script>
+</body>
+</html>
